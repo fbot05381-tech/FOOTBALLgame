@@ -1,0 +1,32 @@
+from pyrogram import Client
+from config import API_ID, API_HASH, BOT_TOKEN
+
+# ✅ Manual Imports – Ensures all handlers are registered
+import handlers.start
+import handlers.mode_select
+import handlers.referee_handler
+import handlers.team_join
+import handlers.team_balance
+import handlers.captain_goalkeeper
+import handlers.gameplay
+import handlers.tournament_handler
+import handlers.score_afk
+
+# ✅ Optional: DM Handlers
+import handlers.dm.start
+import handlers.dm.actions
+import handlers.dm.callbacks
+
+# ✅ Pyrogram Client Initialization
+bot = Client(
+    "football_bot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN,
+    # Optional: enable this if you want automatic plugin loading
+    # plugins=dict(root="handlers")
+)
+
+if __name__ == "__main__":
+    print("⚽ Football Bot is running...")
+    bot.run()
