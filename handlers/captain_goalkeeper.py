@@ -5,6 +5,7 @@ from main import bot  # ✅ Import bot
 
 print("✅ [captain_goalkeeper.py] Captain & Goalkeeper handler loaded")  # Debug
 
+# 🎖️ REFEREE assigns captain via buttons
 @bot.on_message(filters.command("choose_captain") & filters.group)
 async def choose_captain(_, message: Message):
     chat_id = message.chat.id
@@ -23,6 +24,7 @@ async def choose_captain(_, message: Message):
         ])
     )
 
+# 👤 Player clicks to become Captain
 @bot.on_callback_query(filters.regex(r"^captain_(A|B)$"))
 async def set_captain(_, cq: CallbackQuery):
     chat_id = cq.message.chat.id
@@ -34,10 +36,18 @@ async def set_captain(_, cq: CallbackQuery):
     if user_id not in games[chat_id][f"team{team}"]:
         return await cq.answer("❌ You must be in that team to become captain.", show_alert=True)
 
+    if team in games[chat_id]["captains"]:
+        return await cq.answer("⚠️ Captain already assigned.", show_alert=True)
+
     games[chat_id]["captains"][team] = user_id
     await cq.answer("✅ You are now the captain.")
-    await cq.message.edit_caption(f"🎉 {cq.from_user.mention} is now the Captain of Team {team}")
 
+    try:
+        await cq.message.edit_caption(f"🎉 {cq.from_user.mention} is now the Captain of Team {team}")
+    except:
+        await cq.message.edit_text(f"🎉 {cq.from_user.mention} is now the Captain of Team {team}")
+
+# 🧤 Referee assigns goalkeeper by index
 @bot.on_message(filters.command("set_gk") & filters.group)
 async def set_goalkeeper(_, message: Message):
     chat_id = message.chat.id
@@ -66,6 +76,11 @@ async def set_goalkeeper(_, message: Message):
         return await message.reply("❌ Invalid player index.")
 
     gk_id = player_list[idx]
+
+    # Optional: Prevent captain from being GK
+    if gk_id == games[chat_id]["captains"].get(team):
+        return await message.reply("⚠️ Captain cannot be the goalkeeper.")
+
     games[chat_id]["goalkeepers"][team] = gk_id
 
     try:
