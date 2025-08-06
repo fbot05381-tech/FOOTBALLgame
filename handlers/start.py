@@ -46,3 +46,11 @@ async def start_football(_, message: Message):
             [tournament_mode_button()]
         ])
     )
+
+from pyrogram import filters
+from pyrogram.types import Message
+from main import bot  # ✅ Make sure bot is imported
+
+@bot.on_message(filters.command("start"))
+async def start_command(_, message: Message):
+    await message.reply("👋 Hello! I'm your Football Bot.\nUse /start_football in a group to begin the game!")
