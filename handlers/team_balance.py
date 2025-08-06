@@ -1,13 +1,18 @@
-from pyrogram import Client, filters
+from pyrogram import filters
 from pyrogram.types import Message
 from utils.states import games, user_game
+from main import bot  # ✅ Import bot instance
 
-@Client.on_message(filters.command(["add_teamA", "add_teamB"]) & filters.group)
+print("✅ [team_balance.py] Team balance handler loaded")  # Debug
+
+@bot.on_message(filters.command(["add_teamA", "add_teamB"]) & filters.group)
 async def add_to_team(_, message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
     command = message.command[0]
     
+    print(f"📥 [team_balance.py] {command} used by {user_id} in chat {chat_id}")  # Debug
+
     if chat_id not in games or games[chat_id]["referee"] != user_id:
         return await message.reply("❌ Only the referee can use this.")
 
@@ -33,10 +38,12 @@ async def add_to_team(_, message: Message):
 
     user_game[target_id] = chat_id
 
-@Client.on_message(filters.command("shift_member") & filters.group)
+@bot.on_message(filters.command("shift_member") & filters.group)
 async def shift_member(_, message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
+
+    print(f"📥 [team_balance.py] /shift_member used by {user_id} in chat {chat_id}")  # Debug
 
     if chat_id not in games or games[chat_id]["referee"] != user_id:
         return await message.reply("❌ Only the referee can use this.")
