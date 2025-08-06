@@ -1,15 +1,20 @@
-from pyrogram import Client, filters
+from pyrogram import filters
 from pyrogram.types import Message
+from utils.states import games
+from main import bot  # ✅ Import bot instead of using Client
 
-# This module is reserved for:
-# - AFK detection
-# - Yellow/Red card logic
-# - Score tracking
+print("✅ [score_afk.py] Score handler loaded")  # Debug
 
-# You can implement timeouts and referee control here in future.
-
-@Client.on_message(filters.command("score") & filters.group)
+@bot.on_message(filters.command("score") & filters.group)
 async def show_score(_, message: Message):
     chat_id = message.chat.id
-    # Placeholder: replace with real score tracking from your `games` state
-    await message.reply("🏆 Current score:\nTeam A: 0\nTeam B: 0")
+
+    if chat_id not in games:
+        return await message.reply("❌ No ongoing game.")
+
+    score = games[chat_id].get("score", {"A": 0, "B": 0})
+    await message.reply(
+        f"🏆 Current Score:\n"
+        f"Team A: {score['A']}\n"
+        f"Team B: {score['B']}"
+    )
