@@ -7,13 +7,14 @@ from main import bot  # ✅ Import your bot
 
 print("✅ [gameplay.py] Match gameplay handler loaded")  # Debug log
 
-# Action buttons shown in user DM
+# 🎮 Action buttons for players (in DM)
 action_buttons = InlineKeyboardMarkup([
     [InlineKeyboardButton("⚽ KICK", callback_data="act_kick")],
     [InlineKeyboardButton("📤 PASS", callback_data="act_pass")],
     [InlineKeyboardButton("🛡 DEFENSIVE", callback_data="act_defend")]
 ])
 
+# 🎯 Start Match command by referee
 @bot.on_message(filters.command("start_match") & filters.group)
 async def start_match(_, message: Message):
     chat_id = message.chat.id
@@ -23,8 +24,14 @@ async def start_match(_, message: Message):
 
     if chat_id not in games:
         return await message.reply("❌ No active game.")
+
     if games[chat_id]["referee"] != user_id:
         return await message.reply("❌ Only the referee can start the match.")
+
+    # ✅ Ensure required keys exist
+    games[chat_id].setdefault("score", {"A": 0, "B": 0})
+    games[chat_id].setdefault("yellow_cards", {})
+    games[chat_id].setdefault("red_cards", [])
 
     await message.reply("🎮 Match started with 3 rounds of 15 minutes each (simulated).")
 
@@ -40,11 +47,16 @@ async def start_match(_, message: Message):
         f"Team B: {games[chat_id]['score']['B']}"
     )
 
+# 🌀 Round logic
 async def start_round(chat_id):
     all_players = games[chat_id]["teamA"] + games[chat_id]["teamB"]
     random.shuffle(all_players)
 
     for player_id in all_players:
+        if player_id in games[chat_id]["red_cards"]:
+            await bot.send_message(chat_id, f"🚫 Player [{player_id}](tg://user?id={player_id}) is suspended (RED CARD). Skipping turn.")
+            continue
+
         games[chat_id]["current_player"] = player_id
         games[chat_id]["ball_holder"] = player_id
         user_game[player_id] = chat_id
@@ -58,28 +70,24 @@ async def start_round(chat_id):
         except Exception:
             await bot.send_message(
                 chat_id,
-                f"⚠️ Player [{player_id}](tg://user?id={player_id})'s DM is blocked."
+                f"⚠️ Could not DM [{player_id}](tg://user?id={player_id}). Their DMs may be blocked."
             )
 
-        await sleep(20)  # Wait 20 seconds for action
+        await sleep(20)  # ⏱ Wait 20 seconds for player's action
 
+        # 🔁 Check if player missed their turn
         if games[chat_id].get("current_player") == player_id:
-            # Player didn’t act in time (AFK)
             games[chat_id]["yellow_cards"][player_id] = games[chat_id]["yellow_cards"].get(player_id, 0) + 1
+
             if games[chat_id]["yellow_cards"][player_id] >= 2:
                 games[chat_id]["red_cards"].append(player_id)
-                await bot.send_message(
-                    chat_id,
-                    f"🔴 Player [{player_id}](tg://user?id={player_id}) got RED card for being AFK."
-                )
+                await bot.send_message(chat_id, f"🔴 [{player_id}](tg://user?id={player_id}) received a RED card for being AFK.")
             else:
-                await bot.send_message(
-                    chat_id,
-                    f"🟡 Player [{player_id}](tg://user?id={player_id}) is AFK. Yellow card given."
-                )
+                await bot.send_message(chat_id, f"🟡 [{player_id}](tg://user?id={player_id}) is AFK. Yellow card given.")
 
         games[chat_id]["current_player"] = None
 
+# 🎮 Player chooses action via DM
 @bot.on_callback_query(filters.regex("^act_"))
 async def action_choice(_, cq: CallbackQuery):
     user_id = cq.from_user.id
@@ -96,6 +104,7 @@ async def action_choice(_, cq: CallbackQuery):
     action = cq.data.split("_")[1]
     team = "A" if user_id in games[chat_id]["teamA"] else "B"
 
+    # ⚽ Action logic
     if action == "kick":
         scored = random.choice([True, False])
         if scored:
@@ -110,6 +119,10 @@ async def action_choice(_, cq: CallbackQuery):
     elif action == "defend":
         await bot.send_message(chat_id, f"🛡 [{user_id}](tg://user?id={user_id}) chose to play defensive.")
 
+    # ✅ Clear turn
     games[chat_id]["current_player"] = None
     await cq.answer("✅ Action received.")
-    await cq.message.delete()
+    try:
+        await cq.message.delete()
+    except:
+        pass
