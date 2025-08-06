@@ -1,9 +1,10 @@
 from pyrogram.types import Message, InlineKeyboardMarkup
+from pyrogram import filters
 from utils.helpers import random_football_gif
 from utils.buttons import team_mode_button, tournament_mode_button
-from main import bot  # 👈 Import the `bot` object from main.py
+from main import bot  # ✅ bot imported from main.py
 
-print("✅ [start.py] /start_football handler loaded")  # Debug: handler loaded
+print("✅ [start.py] /start_football handler loaded")  # Debug: handler load confirmation
 
 @bot.on_message(filters.command("start_football") & filters.group)
 async def start_football(_, message: Message):
