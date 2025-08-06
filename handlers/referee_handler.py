@@ -1,12 +1,16 @@
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, Message
+from pyrogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from utils.states import games, user_game
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from main import bot  # ✅ Import the bot instance
+from asyncio import sleep
 
-@Client.on_callback_query(filters.regex("^become_referee$"))
+print("✅ [referee_handler.py] Referee & team creation handler loaded")  # Debug
+
+@bot.on_callback_query(filters.regex("^become_referee$"))
 async def handle_referee(_, cq: CallbackQuery):
     chat_id = cq.message.chat.id
     user_id = cq.from_user.id
+
+    print(f"📥 [referee_handler.py] Referee selected in chat {chat_id} by user {user_id}")  # Debug
 
     if chat_id in games:
         return await cq.answer("⚠️ Game already running in this group.", show_alert=True)
@@ -39,10 +43,12 @@ async def handle_referee(_, cq: CallbackQuery):
         caption=f"👨‍⚖️ Referee: {cq.from_user.mention}\n\nSend `/create_team` to start team setup.\nThis will be a 3 round game of 15 mins each!",
     )
 
-@Client.on_message(filters.command("create_team") & filters.group)
+@bot.on_message(filters.command("create_team") & filters.group)
 async def create_team(_, message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
+
+    print(f"📥 [referee_handler.py] /create_team used by {user_id} in chat {chat_id}")  # Debug
 
     if chat_id not in games or games[chat_id]["referee"] != user_id:
         return await message.reply("❌ Only the assigned referee can use this.")
@@ -51,13 +57,9 @@ async def create_team(_, message: Message):
         "**🛠 Team Creation Started!**\nPlayers can now join **Team A** using `/join_teamA`\n⏳ 2 minutes to join...",
     )
 
-    # Start 2-min join for Team A
     await start_team_join_phase(_, chat_id, "A")
 
 async def start_team_join_phase(client, chat_id, team):
-    from utils.states import games
-    from asyncio import sleep
-
     if team == "A":
         games[chat_id]["teamA"] = []
     else:
