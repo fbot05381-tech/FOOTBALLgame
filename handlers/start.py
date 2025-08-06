@@ -2,11 +2,17 @@ from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup
 from utils.helpers import random_football_gif
 from utils.buttons import team_mode_button, tournament_mode_button
-from utils.states import games, game_states  # 🧠 Add this
+from utils.states import games, game_states
 from main import bot
 
 print("✅ [start.py] /start_football handler loaded")
 
+# /start command for DM or group
+@bot.on_message(filters.command("start"))
+async def start_command(_, message: Message):
+    await message.reply("👋 Hello! I'm your Football Bot.\nUse /start_football in a group to begin the game!")
+
+# /start_football command for groups
 @bot.on_message(filters.command("start_football") & filters.group)
 async def start_football(_, message: Message):
     chat_id = message.chat.id
@@ -46,11 +52,3 @@ async def start_football(_, message: Message):
             [tournament_mode_button()]
         ])
     )
-
-from pyrogram import filters
-from pyrogram.types import Message
-from main import bot  # ✅ Make sure bot is imported
-
-@bot.on_message(filters.command("start"))
-async def start_command(_, message: Message):
-    await message.reply("👋 Hello! I'm your Football Bot.\nUse /start_football in a group to begin the game!")
