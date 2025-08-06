@@ -1,27 +1,35 @@
-from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram import filters
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from utils.states import games
+from main import bot  # ✅ Import bot
 
-@Client.on_message(filters.command("choose_captain") & filters.group)
+print("✅ [captain_goalkeeper.py] Captain & Goalkeeper handler loaded")  # Debug
+
+@bot.on_message(filters.command("choose_captain") & filters.group)
 async def choose_captain(_, message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
 
+    print(f"📥 [captain_goalkeeper.py] /choose_captain used in chat {chat_id}")  # Debug
+
     if chat_id not in games or games[chat_id]["referee"] != user_id:
         return await message.reply("❌ Only the referee can choose captains.")
 
-    await message.reply("👑 Click below to assign Team Captains:",
+    await message.reply(
+        "👑 Click below to assign Team Captains:",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("Captain - Team A", callback_data="captain_A")],
             [InlineKeyboardButton("Captain - Team B", callback_data="captain_B")]
         ])
     )
 
-@Client.on_callback_query(filters.regex(r"^captain_(A|B)$"))
-async def set_captain(_, cq):
+@bot.on_callback_query(filters.regex(r"^captain_(A|B)$"))
+async def set_captain(_, cq: CallbackQuery):
     chat_id = cq.message.chat.id
     user_id = cq.from_user.id
     team = cq.data.split("_")[1]
+
+    print(f"🎯 [captain_goalkeeper.py] captain_{team} selected by {user_id}")  # Debug
 
     if user_id not in games[chat_id][f"team{team}"]:
         return await cq.answer("❌ You must be in that team to become captain.", show_alert=True)
@@ -30,11 +38,13 @@ async def set_captain(_, cq):
     await cq.answer("✅ You are now the captain.")
     await cq.message.edit_caption(f"🎉 {cq.from_user.mention} is now the Captain of Team {team}")
 
-@Client.on_message(filters.command("set_gk") & filters.group)
+@bot.on_message(filters.command("set_gk") & filters.group)
 async def set_goalkeeper(_, message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
     parts = message.text.split()
+
+    print(f"📥 [captain_goalkeeper.py] /set_gk received in chat {chat_id}")  # Debug
 
     if chat_id not in games or games[chat_id]["referee"] != user_id:
         return await message.reply("❌ Only the referee can set goalkeepers.")
@@ -48,7 +58,7 @@ async def set_goalkeeper(_, message: Message):
 
     try:
         idx = int(index) - 1
-    except:
+    except ValueError:
         return await message.reply("⚠️ Invalid number.")
 
     player_list = games[chat_id][f"team{team}"]
@@ -57,4 +67,11 @@ async def set_goalkeeper(_, message: Message):
 
     gk_id = player_list[idx]
     games[chat_id]["goalkeepers"][team] = gk_id
-    await message.reply(f"🧤 Goalkeeper of Team {team} is {gk_id}.")
+
+    try:
+        user = await bot.get_users(gk_id)
+        mention = user.mention
+    except:
+        mention = f"`{gk_id}`"
+
+    await message.reply(f"🧤 Goalkeeper of Team {team} is {mention}.")
