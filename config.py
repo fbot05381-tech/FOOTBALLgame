@@ -1,3 +1,5 @@
-API_ID = 25021528  # Replace with your API ID
-API_HASH = "ea73f0e2e8595b85030aa59a11b3ef3b"
-BOT_TOKEN = "8349059640:AAGLKDeX1pJ1Z_iVLzx9Kz7zek2sTIKnHGk"
+import os
+
+API_ID = int(os.environ.get("API_ID"))
+API_HASH = os.environ.get("API_HASH")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
