@@ -1,19 +1,20 @@
-import logging
-from pyrogram import Client
+5import logging
+from pyrogram import Client, filters
 from config import API_ID, API_HASH, BOT_TOKEN
+import asyncio
 
-# ✅ Enable logging to see what's going on
-logging.basicConfig(level=logging.DEBUG)
+# ✅ Enable logging to debug startup
+logging.basicConfig(level=logging.INFO)
 
-# ✅ Define the bot with a fresh session name to avoid sqlite errors
+# ✅ Fresh session name to avoid sqlite lock
 bot = Client(
-    "football_bot2",  # ← new session name
+    "football_bot2",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
 )
 
-# ✅ Import handlers AFTER bot is defined
+# ✅ Load handlers AFTER bot definition
 import handlers.start
 import handlers.mode_select
 import handlers.referee_handler
@@ -27,23 +28,24 @@ import handlers.dm.start
 import handlers.dm.actions
 import handlers.dm.callbacks
 
-# ✅ Add simple fallback test command
+# ✅ Test command
 @bot.on_message(filters.command("ping"))
 async def ping(_, message):
     await message.reply("🏓 Pong!")
 
-# ✅ Optional: send DM to yourself to confirm start
+# ✅ Notify owner in DM
 async def notify_owner():
     try:
         await bot.send_message("me", "✅ Football Bot started successfully!")
     except Exception as e:
-        print("❌ DM failed:", e)
+        print("❌ Could not send DM:", e)
+
+# ✅ Proper way to start and notify
+async def main():
+    await bot.start()
+    print("⚽ Football Bot is running...")
+    await notify_owner()
+    await bot.idle()  # Keeps the bot alive
 
 if __name__ == "__main__":
-    print("⚽ Football Bot is running...")
-
-    # ✅ Start bot, then run DM function and loop
-    bot.start()  # Start client manually
-    import asyncio
-    asyncio.get_event_loop().run_until_complete(notify_owner())  # Send DM
-    bot.run()  # Run forever
+    asyncio.run(main())
