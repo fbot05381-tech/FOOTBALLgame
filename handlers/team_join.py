@@ -1,3 +1,4 @@
+from pyrogram import filters  # ✅ ADD THIS
 from pyrogram.types import Message
 from utils.states import games, user_game
 from main import bot  # ✅ Import bot instance
